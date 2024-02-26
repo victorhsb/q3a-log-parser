@@ -1,4 +1,6 @@
 # Quake 3 Arena log parser
+[![Rust](https://github.com/victorhsb/q3a-log-parser/actions/workflows/tests.yml/badge.svg?event=push)](https://github.com/victorhsb/q3a-log-parser/actions/workflows/tests.yml)
+
 This project was created as a challenge to the Cloudwalk senior software engineer position.
 It consists of a CLI that parses a quake 3 arena compatible log file and generates reports on each of the games contained.
 
