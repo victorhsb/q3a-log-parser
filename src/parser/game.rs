@@ -1,4 +1,4 @@
-use crate::parser::player::Player;
+use super::player::Player;
 use serde::Serialize;
 use std::collections::HashMap;
 

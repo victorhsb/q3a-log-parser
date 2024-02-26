@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::parser::game::Game;
+use super::game::Game;
 
 #[derive(Clone, Debug, Serialize)]
 pub enum Action {

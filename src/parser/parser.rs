@@ -1,6 +1,6 @@
 use crate::parser::actions::Action;
 use super::game::Game;
-use super::parse_actions;
+use super::actions::parse_actions;
 
 /// parses a vector of strings into a vector of actions that can be grouped and parsed
 ///
