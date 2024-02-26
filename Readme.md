@@ -8,8 +8,8 @@ All the rules to the challenge can be found at the [challenge file](challenge.md
 ## Running the project
 You can either pass data to it through stdin or through a file read and you can output the results on stdout or to a file.
 For that you can use:
-`cat input.txt | cargo run` to use stdin and stdout as both input and output or you can use the --input and --output parameters to use files.
-`cargo run -- --input=input.txt --output=output.txt` will both read from input.txt and write to output.txt
+`cat ./input | cargo run` to use stdin and stdout as both input and output or you can use the --input and --output parameters to use files.
+`cargo run -- --input=input --output=output` will both read from input.txt and write to output.txt
 
 ### How the parsing process works
 There are 3 main stages of the parser that will run:
