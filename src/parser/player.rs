@@ -4,6 +4,7 @@ use serde::Serialize;
 pub struct Player {
     pub id: u32,
     pub name: String,
+    pub joined: bool,
 }
 
 impl Player {
@@ -11,6 +12,7 @@ impl Player {
         Player {
             id,
             name: String::new(),
+            joined: false,
         }
     }
 }

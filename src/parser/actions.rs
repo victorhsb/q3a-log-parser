@@ -7,6 +7,7 @@ pub enum Action {
     InitGame,
     Kill(u32, u32, u32),
     ClientConnect(u32),
+    ClientBegin(u32),
     ClientUserinfoChanged(u32, String),
     ClientDisconnect(u32),
     ShutdownGame,
@@ -40,13 +41,16 @@ pub fn parse_actions(actions: Vec<Action>) -> Result<Game, &'static str> {
                 game.add_kill(killer, killed, means_of_death).unwrap();
             }
             Action::ClientUserinfoChanged(player, metadata) => {
-                // n\Isgalamido\t\0\model\xian/default\hmodel\xian/default\g_redteam\\g_blueteam\\c1\4\c2\5\hc\100\w\0\l\0\tt\0\tl\0
+                // reference n\Isgalamido\t\0\model\xian/default\hmodel\xian/default\g_redteam\\g_blueteam\\c1\4\c2\5\hc\100\w\0\l\0\tt\0\tl\0
                 let parts: Vec<&str> = metadata.splitn(3, "\\").collect();
                 if parts.len() < 3 {
                     panic!("Could not parse userinfo");
                 }
                 game.rename_player(player, parts[1].to_string());
             }
+            Action::ClientBegin(id) => {
+                game.player_joined(id);
+            },
             Action::ClientDisconnect(_) => (),
             Action::ShutdownGame => (),
         }
@@ -70,6 +74,8 @@ mod tests {
                 Action::ClientConnect(4),
                 Action::ClientUserinfoChanged(2, "n\\Testing\\t".to_string()),
                 Action::ClientUserinfoChanged(3, "n\\Test\\t".to_string()),
+                Action::ClientBegin(2),
+                Action::ClientBegin(3),
                 Action::Kill(2, 3, 1),
                 Action::Kill(crate::parser::game::WORLD, 3, 1),
                 Action::ShutdownGame,
@@ -79,17 +85,20 @@ mod tests {
             Player {
                 name: "Testing".to_string(),
                 id: 2,
+                joined: true,
             },
             Player {
                 name: "Test".to_string(),
                 id: 3,
+                joined: true,
             },
             Player {
                 name: "".to_string(),
                 id: 4,
+                joined: false,
             },
         ];
-        let expected_player_list = vec!["Testing".to_string(), "Test".to_string(), "".to_string()];
+        let expected_player_list = vec!["Testing".to_string(), "Test".to_string()];
 
         let game = parse_actions(actions).unwrap();
         assert_eq!(game.players, expected_players);

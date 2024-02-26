@@ -104,16 +104,30 @@ impl Game {
         self.player_list.push("".to_string());
     }
 
+    pub fn player_joined(&mut self, id: u32) {
+        match self.players.iter_mut().find(|p| p.id == id) {
+            Some(p) => p.joined = true,
+            None => panic!("Player not found"),
+        }
+
+        self.rebuild_player_list();
+    }
+
     pub fn rename_player(&mut self, id: u32, name: String) {
         match self.players.iter_mut().find(|p| p.id == id) {
             Some(p) => p.name = name,
             None => panic!("Player not found"),
         }
 
-        // rebuild the player list
+        self.rebuild_player_list();
+    }
+
+    fn rebuild_player_list(&mut self) {
         self.player_list.clear();
         for player in &self.players {
-            self.player_list.push(player.name.clone());
+            if player.joined {
+                self.player_list.push(player.name.clone());
+            }
         }
     }
 
@@ -175,14 +189,17 @@ mod tests {
             Player {
                 name: "".to_string(),
                 id: 1,
+                joined: false,
             },
             Player {
                 name: "".to_string(),
                 id: 2,
+                joined: false,
             },
             Player {
                 name: "".to_string(),
                 id: 3,
+                joined: false,
             },
         ];
 
@@ -205,10 +222,12 @@ mod tests {
             Player {
                 name: "".to_string(),
                 id: 1,
+                joined: false,
             },
             Player {
                 name: "".to_string(),
                 id: 2,
+                joined: false,
             },
         ];
 
@@ -241,8 +260,10 @@ mod tests {
         let mut game = Game::new();
         game.new_player(1);
         game.rename_player(1, "TestGuy".to_string());
+        game.player_joined(1);
         game.new_player(2);
         game.rename_player(2, "Testman".to_string());
+        game.player_joined(2);
 
         game.add_kill(2, 1, 10).unwrap();
 

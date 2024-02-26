@@ -62,6 +62,10 @@ fn parse_into_actions(buf: Vec<String>) -> Vec<Action> {
                     Ok(client) => actions.push(Action::ClientConnect(client)),
                     Err(_) => (),
                 },
+                "ClientBegin:" => match parts[2].parse::<u32>() {
+                    Ok(client) => actions.push(Action::ClientBegin(client)),
+                    Err(_) => (),
+                },
                 "ClientUserinfoChanged:" => match parts[2].parse::<u32>() {
                     Ok(client) => {
                         actions.push(Action::ClientUserinfoChanged(client, parts[3..].join(" ")))
@@ -201,8 +205,10 @@ mod tests {
                 Action::InitGame,
                 Action::ClientConnect(2),
                 Action::ClientUserinfoChanged(2, "n\\Isgalamido\\t\\0\\model\\uriel/zael\\hmodel\\uriel/zael\\g_redteam\\g_redteam\\g_blue".to_string()),
+                Action::ClientBegin(2),
                 Action::ClientConnect(3),
                 Action::ClientUserinfoChanged(3, "n\\Dono da Bola\\t\\0\\model\\sarge/krusade\\hmodel\\sarge/krusade\\g_redteam\\g_redteam\\g_blu".to_string()),
+                Action::ClientBegin(3),
                 Action::Kill(2, 3, 7),
                 Action::ShutdownGame,
             ],
@@ -215,7 +221,10 @@ mod tests {
         let expected = vec![
             Game {
                 total_kills: 1,
-                players: vec![Player{id: 2, name: "Isgalamido".to_string()}, Player{id: 3, name: "Dono da Bola".to_string()}],
+                players: vec![
+                    Player{id: 2, name: "Isgalamido".to_string(), joined: true},
+                    Player{id: 3, name: "Dono da Bola".to_string(), joined: true}
+                ],
                 player_list: vec!["Isgalamido".to_string(), "Dono da Bola".to_string()],
                 kill_score,
                 means_of_death,
