@@ -3,6 +3,7 @@
 
 This project was created as a challenge to the Cloudwalk senior software engineer position.
 It consists of a CLI that parses a quake 3 arena compatible log file and generates reports on each of the games contained.
+
 All the rules to the challenge can be found at the [challenge file](challenge.md). An excerpt from the provided [quake 3 arena log file](input) can be found at [the example file](example) used to test throughout the development.
 
 ## Running the project
