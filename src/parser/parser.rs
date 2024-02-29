@@ -1,6 +1,5 @@
 use crate::parser::actions::Action;
 use super::game::Game;
-use super::actions::parse_actions;
 
 /// parses a vector of strings into a vector of actions that can be grouped and parsed
 ///
@@ -116,7 +115,7 @@ fn group(actions: Vec<Action>) -> Vec<Vec<Action>> {
 fn parse_grouped_actions(games: Vec<Vec<Action>>) -> Result<Vec<Game>, &'static str> {
     let mut response: Vec<Game> = Vec::new();
     for game_actions in games {
-        response.push(parse_actions(game_actions)?);
+        response.push(Action::parse_game(game_actions)?);
     }
     Ok(response)
 }

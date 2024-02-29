@@ -88,3 +88,35 @@ fn write_output(output: Option<String>, content: String) -> Result<(), String> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_read_input() {
+        // Test reading from a file
+        std::fs::write("test_input.txt", "Hello\nworld").unwrap();
+        let result = read_input(Some("test_input.txt".to_string()));
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), vec!["Hello", "world"]);
+
+        // Clean up
+        std::fs::remove_file("test_input.txt").unwrap();
+    }
+
+    #[test]
+    fn test_write_output() {
+        // Test writing to a file
+        let result = write_output(Some("test_output.txt".to_string()), "Hello, world!".to_string());
+        assert!(result.is_ok());
+        assert_eq!(std::fs::read_to_string("test_output.txt").unwrap(), "Hello, world!");
+
+        // Test writing to console
+        let result = write_output(None, "Hello, world!".to_string());
+        assert!(result.is_ok());
+
+        // Clean up
+        std::fs::remove_file("test_output.txt").unwrap();
+    }
+}

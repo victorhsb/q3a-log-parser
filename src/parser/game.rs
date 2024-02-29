@@ -104,22 +104,24 @@ impl Game {
         self.player_list.push("".to_string());
     }
 
-    pub fn player_joined(&mut self, id: u32) {
+    pub fn player_joined(&mut self, id: u32) -> Result<(), &'static str> {
         match self.players.iter_mut().find(|p| p.id == id) {
             Some(p) => p.joined = true,
-            None => panic!("Player not found"),
+            None => return Err("Player not found"),
         }
 
         self.rebuild_player_list();
+        Ok(())
     }
 
-    pub fn rename_player(&mut self, id: u32, name: String) {
+    pub fn rename_player(&mut self, id: u32, name: String) -> Result<(), &'static str> {
         match self.players.iter_mut().find(|p| p.id == id) {
             Some(p) => p.name = name,
-            None => panic!("Player not found"),
+            None => return Err("Player not found"),
         }
 
         self.rebuild_player_list();
+        Ok(())
     }
 
     fn rebuild_player_list(&mut self) {
@@ -259,11 +261,11 @@ mod tests {
     fn test_json_format() {
         let mut game = Game::new();
         game.new_player(1);
-        game.rename_player(1, "TestGuy".to_string());
-        game.player_joined(1);
+        game.rename_player(1, "TestGuy".to_string()).unwrap();
+        game.player_joined(1).unwrap();
         game.new_player(2);
-        game.rename_player(2, "Testman".to_string());
-        game.player_joined(2);
+        game.rename_player(2, "Testman".to_string()).unwrap();
+        game.player_joined(2).unwrap();
 
         game.add_kill(2, 1, 10).unwrap();
 
