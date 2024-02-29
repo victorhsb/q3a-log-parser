@@ -1,5 +1,5 @@
-use crate::parser::actions::Action;
 use super::game::Game;
+use crate::parser::actions::Action;
 
 /// parses a vector of strings into a vector of actions that can be grouped and parsed
 ///
@@ -31,9 +31,10 @@ use super::game::Game;
 pub fn parse(buf: Vec<String>) -> Result<Vec<Game>, &'static str> {
     let actions = parse_into_actions(buf);
 
-    let grouped_actions = group(actions);
-
-    parse_grouped_actions(grouped_actions)
+    group_by_game(actions)
+        .iter()
+        .map(|game| Action::parse_game(game.to_vec()))
+        .collect()
 }
 
 fn parse_into_actions(buf: Vec<String>) -> Vec<Action> {
@@ -54,7 +55,10 @@ fn parse_into_actions(buf: Vec<String>) -> Vec<Action> {
                     }
                     let killer = parts[2].parse::<u32>().expect("could not parse killer id");
                     let killed = parts[3].parse::<u32>().expect("could not parse killed id");
-                    let means_of_death = parts[4].trim_matches(':').parse::<u32>().expect("could not parse means of death id");
+                    let means_of_death = parts[4]
+                        .trim_matches(':')
+                        .parse::<u32>()
+                        .expect("could not parse means of death id");
                     actions.push(Action::Kill(killer, killed, means_of_death));
                 }
                 "ClientConnect:" => match parts[2].parse::<u32>() {
@@ -80,28 +84,25 @@ fn parse_into_actions(buf: Vec<String>) -> Vec<Action> {
                 _ => (),
             }
         }
-    };
+    }
 
     actions
 }
 
-fn group(actions: Vec<Action>) -> Vec<Vec<Action>> {
-    let mut games: Vec<Vec<Action>> = Vec::new();
+fn group_by_game(actions: Vec<Action>) -> Vec<Vec<Action>> {
+    let mut grouped_actions: Vec<Vec<Action>> = Vec::new();
     let mut game: Vec<Action> = Vec::new();
     for action in actions {
         match action {
             Action::InitGame => {
                 if game.len() > 0 {
-                    // in case there's still an unfinished game
-                    games.push(game.clone());
+                    grouped_actions.push(std::mem::replace(&mut game, Vec::new()));
                 }
-                game.clear();
                 game.push(action);
             }
             Action::ShutdownGame => {
                 game.push(action);
-                games.push(game.clone());
-                game.clear();
+                grouped_actions.push(std::mem::replace(&mut game, Vec::new()));
             }
             _ => {
                 game.push(action);
@@ -109,15 +110,7 @@ fn group(actions: Vec<Action>) -> Vec<Vec<Action>> {
         }
     }
 
-    games
-}
-
-fn parse_grouped_actions(games: Vec<Vec<Action>>) -> Result<Vec<Game>, &'static str> {
-    let mut response: Vec<Game> = Vec::new();
-    for game_actions in games {
-        response.push(Action::parse_game(game_actions)?);
-    }
-    Ok(response)
+    grouped_actions
 }
 
 #[cfg(test)]
@@ -125,7 +118,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse() {
+    fn test_parse_into_actions() {
         let input = vec![
             "  0:00 ------------------------------------------------------------".to_string(),
             "  0:00 InitGame: ".to_string(),
@@ -189,49 +182,53 @@ mod tests {
                 Action::Kill(2, 3, 7),
                 Action::ShutdownGame,
             ]
-        ]; 
+        ];
 
-        assert_eq!(group(given), expected);
+        assert_eq!(group_by_game(given), expected);
     }
 
-    use super::super::player::Player;
     use super::super::game::KillMode;
+    use super::super::player::Player;
 
     #[test]
-    fn test_parse_grouped_actions() {
+    fn test_parse() {
         let given = vec![
-            vec![
-                Action::InitGame,
-                Action::ClientConnect(2),
-                Action::ClientUserinfoChanged(2, "n\\Isgalamido\\t\\0\\model\\uriel/zael\\hmodel\\uriel/zael\\g_redteam\\g_redteam\\g_blue".to_string()),
-                Action::ClientBegin(2),
-                Action::ClientConnect(3),
-                Action::ClientUserinfoChanged(3, "n\\Dono da Bola\\t\\0\\model\\sarge/krusade\\hmodel\\sarge/krusade\\g_redteam\\g_redteam\\g_blu".to_string()),
-                Action::ClientBegin(3),
-                Action::Kill(2, 3, 7),
-                Action::ShutdownGame,
-            ],
-        ]; 
+            "  0:00 ------------------------------------------------------------".to_string(),
+            "  0:00 InitGame: ".to_string(),
+            "  0:00 ClientConnect: 2".to_string(),
+            "  0:00 ClientUserinfoChanged: 2 n\\Isgalamido\\t\\0\\model\\uriel/zael\\hmodel\\uriel/zael\\g_redteam\\g_redteam\\g_blue".to_string(),
+            "  0:00 ClientBegin: 2".to_string(),
+            "  0:00 ClientConnect: 3".to_string(),
+            "  0:00 ClientUserinfoChanged: 3 n\\Dono da Bola\\t\\0\\model\\sarge/krusade\\hmodel\\sarge/krusade\\g_redteam\\g_redteam\\g_blu".to_string(),
+            "  0:00 ClientBegin: 3".to_string(),
+            "  0:00 Kill: 2 3 7: Isgalamido killed Dono da Bola by MOD_ROCKET".to_string(),
+            "  0:00 ShutdownGame: ".to_string(),
+            "  0:00 ------------------------------------------------------------".to_string(),
+        ];
         let mut means_of_death = std::collections::HashMap::new();
         means_of_death.insert(KillMode::ModRocketSplash, 1);
         let mut kill_score = std::collections::HashMap::new();
         kill_score.insert("Isgalamido".to_string(), 1);
 
-        let expected = vec![
-            Game {
-                total_kills: 1,
-                players: vec![
-                    Player{id: 2, name: "Isgalamido".to_string(), joined: true},
-                    Player{id: 3, name: "Dono da Bola".to_string(), joined: true}
-                ],
-                player_list: vec!["Isgalamido".to_string(), "Dono da Bola".to_string()],
-                kill_score,
-                means_of_death,
-            }
-        ];
+        let expected = vec![Game {
+            total_kills: 1,
+            players: vec![
+                Player {
+                    id: 2,
+                    name: "Isgalamido".to_string(),
+                    joined: true,
+                },
+                Player {
+                    id: 3,
+                    name: "Dono da Bola".to_string(),
+                    joined: true,
+                },
+            ],
+            player_list: vec!["Isgalamido".to_string(), "Dono da Bola".to_string()],
+            kill_score,
+            means_of_death,
+        }];
 
-        assert_eq!(parse_grouped_actions(given).unwrap(), expected);
+        assert_eq!(parse(given).unwrap(), expected);
     }
 }
-
-
